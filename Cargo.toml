@@ -1,0 +1,20 @@
+[package]
+name = "nu_plugin_from_parquet"
+version = "0.0.0"
+authors = ["Jake Swenson <jake@jakeswenson.com>"]
+edition = "2021"
+repository = "https://github.com/jakeswenson/nu_plugin_from_parquet"
+description = "nu plugin to add parquet support"
+license = "MIT"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+nu-plugin = "0.66.2"
+nu-protocol = "0.66.2"
+parquet = "19.0.0"
+bytes = "1.2.1"
+
+[dependencies.chrono]
+version = "0.4.20"
+features = ["serde"]
