@@ -1,6 +1,6 @@
-# From jakeswneson
+# From jakeswenson
 
-This repo is a copy from jakeswenson's repo and updated to support nushell v0.60+ by @flying-sheep. See the original here https://github.com/jakeswenson/nu_plugin_from_parquet
+This repo is a copy from jakeswenson's repo and updated to support nushell v0.60+ by @flying-sheep. See the original here https://github.com/jakeswenson/nu_plugin_from_parquet. Asked permission to fork, update, and add license here https://github.com/jakeswenson/nu_plugin_from_parquet/issues/4
 
 # nu_plugin_from_parquet
 
