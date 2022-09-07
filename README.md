@@ -22,7 +22,7 @@ To [add the plugin] permanently, just install it and call [`register`] on it:
 
 ```bash
 cargo install nu_plugin_from_parquet
-register --encoding=json ~/.cargo/bin/nu_plugin_from_parquet
+register ~/.cargo/bin/nu_plugin_from_parquet
 ```
 
 ## Usage
