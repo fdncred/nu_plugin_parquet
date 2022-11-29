@@ -1,16 +1,20 @@
 use bytes::Bytes;
-use parquet::record::{Field, Row};
-use parquet::file::serialized_reader::SerializedFileReader;
+use chrono::{DateTime, Duration, FixedOffset, TimeZone};
+use nu_protocol::{ShellError, Span, Value};
 use parquet::file::reader::FileReader;
-use nu_protocol::{Value, Span, ShellError};
-use chrono::{Duration, FixedOffset, TimeZone, DateTime};
+use parquet::file::serialized_reader::SerializedFileReader;
+use parquet::record::{Field, Row};
 use std::convert::TryInto;
 use std::ops::Add;
 
 fn convert_to_nu(field: &Field, span: Span) -> Value {
-    let epoch: DateTime<FixedOffset> = FixedOffset::west(0)
-        .ymd(1970, 1, 1)
-        .and_hms(0, 0, 0);
+    let epoch: DateTime<FixedOffset> = match FixedOffset::west_opt(0)
+        .expect("This should never fail, said the naive person.")
+        .with_ymd_and_hms(1970, 1, 1, 0, 0, 0)
+    {
+        chrono::LocalResult::Single(dt) => dt,
+        _ => panic!("This should never fail, said the other naive person."),
+    };
     match field {
         Field::Null => Value::nothing(span),
         Field::Bool(b) => Value::boolean(*b, span),
@@ -21,11 +25,17 @@ fn convert_to_nu(field: &Field, span: Span) -> Value {
         Field::Int(i) => Value::int((*i).into(), span),
         Field::UInt(i) => Value::int((*i).into(), span),
         Field::Long(l) => Value::int(*l, span),
-        Field::ULong(l) => {
-            (*l).try_into()
-                .map(|l| Value::int(l, span))
-                .unwrap_or_else(|e| Value::Error { error: ShellError::CantConvert("i64".into(), "u64".into(), span, Some(e.to_string())) })
-        }
+        Field::ULong(l) => (*l)
+            .try_into()
+            .map(|l| Value::int(l, span))
+            .unwrap_or_else(|e| Value::Error {
+                error: ShellError::CantConvert(
+                    "i64".into(),
+                    "u64".into(),
+                    span,
+                    Some(e.to_string()),
+                ),
+            }),
         Field::Float(f) => Value::float((*f).into(), span),
         Field::Double(f) => Value::float(*f, span),
         Field::Str(s) => Value::string(s, span),
@@ -42,10 +52,18 @@ fn convert_to_nu(field: &Field, span: Span) -> Value {
             let val = epoch.add(Duration::microseconds(*micros_since_epoch as i64));
             Value::Date { val, span }
         }
-        Field::Decimal(_d) => { unimplemented!("Parquet DECIMAL is not handled yet") }
-        Field::Group(_row) => { unimplemented!("Nested structs not supported yet") }
-        Field::ListInternal(_list) => { unimplemented!("Lists not supported yet") }
-        Field::MapInternal(_map) => { unimplemented!("Maps not supported yet") }
+        Field::Decimal(_d) => {
+            unimplemented!("Parquet DECIMAL is not handled yet")
+        }
+        Field::Group(_row) => {
+            unimplemented!("Nested structs not supported yet")
+        }
+        Field::ListInternal(_list) => {
+            unimplemented!("Lists not supported yet")
+        }
+        Field::MapInternal(_map) => {
+            unimplemented!("Maps not supported yet")
+        }
     }
 }
 
@@ -62,8 +80,7 @@ fn convert_parquet_row(row: Row, span: Span) -> Value {
 pub fn from_parquet_bytes(bytes: Vec<u8>, span: Span) -> Value {
     let cursor = Bytes::from(bytes);
     let reader = SerializedFileReader::new(cursor).unwrap();
-        let mut iter = reader.get_row_iter(None)
-            .unwrap();
+    let mut iter = reader.get_row_iter(None).unwrap();
     let mut vals = Vec::new();
     while let Some(record) = iter.next() {
         let row = convert_parquet_row(record, span);
