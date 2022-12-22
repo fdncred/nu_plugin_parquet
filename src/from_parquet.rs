@@ -72,7 +72,7 @@ fn convert_parquet_row(row: Row, span: Span) -> Value {
     let mut vals = vec![];
     for (name, field) in row.get_column_iter() {
         cols.push(name.clone());
-        vals.push(convert_to_nu(field, span.clone()));
+        vals.push(convert_to_nu(field, span));
     }
     Value::Record { cols, vals, span }
 }
@@ -80,9 +80,9 @@ fn convert_parquet_row(row: Row, span: Span) -> Value {
 pub fn from_parquet_bytes(bytes: Vec<u8>, span: Span) -> Value {
     let cursor = Bytes::from(bytes);
     let reader = SerializedFileReader::new(cursor).unwrap();
-    let mut iter = reader.get_row_iter(None).unwrap();
+    let iter = reader.get_row_iter(None).unwrap();
     let mut vals = Vec::new();
-    while let Some(record) = iter.next() {
+    for record in iter {
         let row = convert_parquet_row(record, span);
         vals.push(row);
     }
