@@ -1,7 +1,7 @@
 mod from_parquet;
 
 use nu_plugin::{serve_plugin, EvaluatedCall, JsonSerializer, LabeledError, Plugin};
-use nu_protocol::{Category, Signature, Type, Value};
+use nu_protocol::{Category, PluginExample, PluginSignature, Type, Value};
 
 struct FromParquet;
 
@@ -12,13 +12,25 @@ impl FromParquet {
 }
 
 impl Plugin for FromParquet {
-    fn signature(&self) -> Vec<Signature> {
-        vec![Signature::build("from parquet")
+    fn signature(&self) -> Vec<PluginSignature> {
+        vec![PluginSignature::build("from parquet")
             .usage("Convert from .parquet binary into table")
             .allow_variants_without_examples(true)
             .input_output_types(vec![(Type::Binary, Type::Any)])
             .category(Category::Experimental)
-            .filter()]
+            .filter()
+            .plugin_examples(vec![
+                PluginExample {
+                    description: "Convert from .parquet binary into table".into(),
+                    example: "open --raw file.parquet | from parquet".into(),
+                    result: None,
+                },
+                PluginExample {
+                    description: "Convert from .parquet binary into table".into(),
+                    example: "open file.parquet".into(),
+                    result: None,
+                },
+            ])]
     }
 
     fn run(

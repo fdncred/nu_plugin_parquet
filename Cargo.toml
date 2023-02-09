@@ -12,11 +12,11 @@ license = "MIT"
 [dependencies]
 # nu-plugin = "0.74.0"
 # nu-protocol = "0.74.0"
-nu-plugin = { path = "../nushell/crates/nu-plugin", version = "0.74.1"}
-nu-protocol = { path = "../nushell/crates/nu-protocol", version="0.74.1"}
+nu-plugin = { path = "../nushell/crates/nu-plugin", version = "0.75.1"}
+nu-protocol = { path = "../nushell/crates/nu-protocol", version="0.75.1"}
 bytes = "1.3.0"
 chrono = { version = "0.4.23", features = ["serde"] }
-parquet = "31.0.0"
+parquet = "32.0.0"
 
 # Would be nice if this worked but it does not
 # [patch.crates-io]
