@@ -1,7 +1,7 @@
 [package]
 name = "nu_plugin_from_parquet"
-version = "0.0.1"
-authors = ["Jake Swenson <jake@jakeswenson.com>", "The Nu Project Contributors"]
+version = "0.0.2"
+authors = ["Jake Swenson <jake@jakeswenson.com>", "Darren Schroeder"]
 edition = "2021"
 repository = "https://github.com/jakeswenson/nu_plugin_from_parquet"
 description = "nu plugin to add parquet support"
@@ -12,11 +12,11 @@ license = "MIT"
 [dependencies]
 # nu-plugin = "0.74.0"
 # nu-protocol = "0.74.0"
-nu-plugin = { path = "../nushell/crates/nu-plugin", version = "0.75.1"}
-nu-protocol = { path = "../nushell/crates/nu-protocol", version="0.75.1"}
-bytes = "1.3.0"
+nu-plugin = { path = "../nushell/crates/nu-plugin", version = "0.76.1"}
+nu-protocol = { path = "../nushell/crates/nu-protocol", version="0.76.1"}
+bytes = "1.4.0"
 chrono = { version = "0.4.23", features = ["serde"] }
-parquet = "32.0.0"
+parquet = "33.0.0"
 
 # Would be nice if this worked but it does not
 # [patch.crates-io]
