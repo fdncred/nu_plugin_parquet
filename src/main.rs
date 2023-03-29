@@ -54,5 +54,5 @@ impl Plugin for FromParquet {
 }
 
 fn main() {
-    serve_plugin(&mut FromParquet::new(), JsonSerializer);
+    serve_plugin(&mut FromParquet::new(), JsonSerializer {});
 }
