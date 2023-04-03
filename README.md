@@ -51,14 +51,38 @@ open -r sample.parquet | from parquet | first 10
 Display metadata, instead of data, from the parquet file by passing the `--metadata, -m` flag to `from parquet`:
 
 ```bash
-open -r sample.parquet | from parquet --metadata
-╭────────────┬───────────────────────────────────────────────────────────────────────────╮
-│ version    │ 1                                                                         │
-│ creator    │ parquet-mr version 1.8.1 (build 4aba4dae7bb0d4edbcf7923ae1339f28fd3f7fcf) │
-│ num_rows   │ 1000                                                                      │
-│ key_values │ [list 0 items]                                                            │
-│ schema     │ {record 3 fields}                                                         │
-│ row_groups │ [table 1 row]                                                             │
-╰────────────┴───────────────────────────────────────────────────────────────────────────╯
+open -r sample.parquet | from parquet --metadata  | table -e 
+╭────────────┬─────────────────────────────────────────────────────────────────────────────────────────────────────╮
+│ version    │ 1                                                                                                   │
+│ creator    │ parquet-mr version 1.8.1 (build 4aba4dae7bb0d4edbcf7923ae1339f28fd3f7fcf)                           │
+│ num_rows   │ 1000                                                                                                │
+│ key_values │ [list 0 items]                                                                                      │
+│            │ ╭─────────────┬───────────────────────────────────────────────────────────────────────────────────╮ │
+│ schema     │ │ name        │ hive_schema                                                                       │ │
+│            │ │ num_columns │ 13                                                                                │ │
+│            │ │             │ ╭────┬───────────────────┬────────────┬────────────┬─────────────┬──────────────╮ │ │
+│            │ │ schema      │ │  # │       name        │ repetition │    type    │ type_length │ logical_type │ │ │
+│            │ │             │ ├────┼───────────────────┼────────────┼────────────┼─────────────┼──────────────┤ │ │
+│            │ │             │ │  0 │ registration_dttm │ OPTIONAL   │ INT96      │             │              │ │ │
+│            │ │             │ │  1 │ id                │ OPTIONAL   │ INT32      │             │              │ │ │
+│            │ │             │ │  2 │ first_name        │ OPTIONAL   │ BYTE_ARRAY │          -1 │ UTF8         │ │ │
+│            │ │             │ │  3 │ last_name         │ OPTIONAL   │ BYTE_ARRAY │          -1 │ UTF8         │ │ │
+│            │ │             │ │  4 │ email             │ OPTIONAL   │ BYTE_ARRAY │          -1 │ UTF8         │ │ │
+│            │ │             │ │  5 │ gender            │ OPTIONAL   │ BYTE_ARRAY │          -1 │ UTF8         │ │ │
+│            │ │             │ │  6 │ ip_address        │ OPTIONAL   │ BYTE_ARRAY │          -1 │ UTF8         │ │ │
+│            │ │             │ │  7 │ cc                │ OPTIONAL   │ BYTE_ARRAY │          -1 │ UTF8         │ │ │
+│            │ │             │ │  8 │ country           │ OPTIONAL   │ BYTE_ARRAY │          -1 │ UTF8         │ │ │
+│            │ │             │ │  9 │ birthdate         │ OPTIONAL   │ BYTE_ARRAY │          -1 │ UTF8         │ │ │
+│            │ │             │ │ 10 │ salary            │ OPTIONAL   │ DOUBLE     │             │              │ │ │
+│            │ │             │ │ 11 │ title             │ OPTIONAL   │ BYTE_ARRAY │          -1 │ UTF8         │ │ │
+│            │ │             │ │ 12 │ comments          │ OPTIONAL   │ BYTE_ARRAY │          -1 │ UTF8         │ │ │
+│            │ │             │ ╰────┴───────────────────┴────────────┴────────────┴─────────────┴──────────────╯ │ │
+│            │ ╰─────────────┴───────────────────────────────────────────────────────────────────────────────────╯ │
+│            │ ╭───┬──────────┬─────────────────╮                                                                  │
+│ row_groups │ │ # │ num_rows │ total_byte_size │                                                                  │
+│            │ ├───┼──────────┼─────────────────┤                                                                  │
+│            │ │ 0 │     1000 │          112492 │                                                                  │
+│            │ ╰───┴──────────┴─────────────────╯                                                                  │
+╰────────────┴─────────────────────────────────────────────────────────────────────────────────────────────────────╯
 ```
 
