@@ -15,6 +15,11 @@ impl Plugin for FromParquet {
     fn signature(&self) -> Vec<PluginSignature> {
         vec![PluginSignature::build("from parquet")
             .usage("Convert from .parquet binary into table")
+            .switch(
+                "metadata",
+                "Convert metadata from .parquet binary into table",
+                Some('m'),
+            )
             .allow_variants_without_examples(true)
             .input_output_types(vec![(Type::Binary, Type::Any)])
             .category(Category::Experimental)
@@ -30,6 +35,11 @@ impl Plugin for FromParquet {
                     example: "open file.parquet".into(),
                     result: None,
                 },
+                PluginExample {
+                    description: "Convert metadata from .parquet binary into table".into(),
+                    example: "open file.parquet | from parquet --metadata".into(),
+                    result: None,
+                },
             ])]
     }
 
@@ -41,9 +51,13 @@ impl Plugin for FromParquet {
     ) -> Result<Value, LabeledError> {
         assert_eq!(name, "from parquet");
         match input {
-            Value::Binary { val, span } => {
-                Ok(crate::from_parquet::from_parquet_bytes(val.clone(), *span))
-            }
+            Value::Binary { val, span } => match call.has_flag("metadata") {
+                true => Ok(crate::from_parquet::metadata_from_parquet_bytes(
+                    val.clone(),
+                    *span,
+                )),
+                false => Ok(crate::from_parquet::from_parquet_bytes(val.clone(), *span)),
+            },
             v => Err(LabeledError {
                 label: "Expected binary from pipeline".into(),
                 msg: format!("requires binary input, got {}", v.get_type()),
