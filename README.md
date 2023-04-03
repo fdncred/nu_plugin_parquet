@@ -45,3 +45,20 @@ open -r sample.parquet | from parquet | first 10
 │ # │ registration… │ id │ first_name │ last_name │    email     │ gender │  ip_address  │      cc      │   country    │ birthdate  │  salary   │    title     │ comments │
 ╰───┴───────────────┴────┴────────────┴───────────┴──────────────┴────────┴──────────────┴──────────────┴──────────────┴────────────┴───────────┴──────────────┴──────────╯
 ```
+
+### Displaying Metadata
+
+Display metadata, instead of data, from the parquet file by passing the `--metadata, -m` flag to `from parquet`:
+
+```bash
+open -r sample.parquet | from parquet --metadata
+╭────────────┬───────────────────────────────────────────────────────────────────────────╮
+│ version    │ 1                                                                         │
+│ creator    │ parquet-mr version 1.8.1 (build 4aba4dae7bb0d4edbcf7923ae1339f28fd3f7fcf) │
+│ num_rows   │ 1000                                                                      │
+│ key_values │ [list 0 items]                                                            │
+│ schema     │ {record 3 fields}                                                         │
+│ row_groups │ [table 1 row]                                                             │
+╰────────────┴───────────────────────────────────────────────────────────────────────────╯
+```
+
