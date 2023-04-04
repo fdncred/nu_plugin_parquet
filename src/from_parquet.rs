@@ -4,6 +4,7 @@ use indexmap::map::IndexMap;
 use nu_plugin::LabeledError;
 use nu_protocol::{ShellError, Span, Spanned, Value};
 use parquet::basic::{ConvertedType, LogicalType, TimeUnit, Type as PhysicalType};
+use parquet::data_type::{AsBytes, Decimal};
 use parquet::file::metadata::{KeyValue, RowGroupMetaData};
 use parquet::file::reader::FileReader;
 use parquet::file::serialized_reader::SerializedFileReader;
@@ -57,9 +58,7 @@ fn convert_to_nu(field: &Field, span: Span) -> Value {
             let val = epoch.add(Duration::microseconds(*micros_since_epoch as i64));
             Value::Date { val, span }
         }
-        Field::Decimal(_d) => {
-            unimplemented!("Parquet DECIMAL is not handled yet")
-        }
+        Field::Decimal(d) => Value::string(decimal_to_string(d), span),
         Field::Group(_row) => {
             unimplemented!("Nested structs not supported yet")
         }
@@ -80,6 +79,52 @@ fn convert_parquet_row(row: Row, span: Span) -> Value {
         vals.push(convert_to_nu(field, span));
     }
     Value::Record { cols, vals, span }
+}
+
+fn decimal_to_string(decimal: &Decimal) -> String {
+    let str = match decimal {
+        Decimal::Int32 {
+            value,
+            precision: _,
+            scale: _,
+        } => {
+            let num = u32::from_be_bytes(*value);
+            format!("{}", num)
+        }
+        Decimal::Int64 {
+            value,
+            precision: _,
+            scale: _,
+        } => {
+            let num = u64::from_be_bytes(*value);
+            format!("{}", num)
+        }
+        Decimal::Bytes {
+            value,
+            precision: _,
+            scale: _,
+        } => value
+            .as_bytes()
+            .iter()
+            .map(|b| format!("{:x}", b))
+            .collect(),
+    };
+
+    if decimal.scale() == 0 {
+        str
+    } else if str.len() <= decimal.scale() as usize {
+        let mut s = String::new();
+        s.push_str("0.");
+        for _ in 0..(decimal.scale() as usize - str.len()) {
+            s.push_str("0");
+        }
+        s.push_str(&str);
+        s
+    } else {
+        let mut s = str;
+        s.insert(s.len() - decimal.scale() as usize, '.');
+        s
+    }
 }
 
 pub fn from_parquet_bytes(bytes: Vec<u8>, span: Span) -> Result<Value, LabeledError> {
@@ -339,4 +384,41 @@ fn row_groups_to_value(row_groups: &[RowGroupMetaData], span: Span) -> Value {
         vals.push(Value::from(Spanned { item: val, span }));
     }
     Value::List { vals, span }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use parquet::data_type::ByteArray;
+
+    #[test]
+    fn test_decimal_to_string() {
+        let decimal = Decimal::from_i32(123, 5, 0);
+        assert_eq!(decimal_to_string(&decimal), "123");
+        let decimal = Decimal::from_i64(123, 5, 0);
+        assert_eq!(decimal_to_string(&decimal), "123");
+        let decimal = Decimal::from_bytes(ByteArray::from(vec![1, 2, 3]), 5, 0);
+        assert_eq!(decimal_to_string(&decimal), "123");
+
+        let decimal = Decimal::from_i32(123, 5, 2);
+        assert_eq!(decimal_to_string(&decimal), "1.23");
+        let decimal = Decimal::from_i64(123, 5, 2);
+        assert_eq!(decimal_to_string(&decimal), "1.23");
+        let decimal = Decimal::from_bytes(ByteArray::from(vec![1, 2, 3]), 5, 2);
+        assert_eq!(decimal_to_string(&decimal), "1.23");
+
+        let decimal = Decimal::from_i32(123, 5, 5);
+        assert_eq!(decimal_to_string(&decimal), "0.00123");
+        let decimal = Decimal::from_i64(123, 5, 5);
+        assert_eq!(decimal_to_string(&decimal), "0.00123");
+        let decimal = Decimal::from_bytes(ByteArray::from(vec![1, 2, 3]), 5, 5);
+        assert_eq!(decimal_to_string(&decimal), "0.00123");
+
+        let decimal = Decimal::from_i32(0, 5, 5);
+        assert_eq!(decimal_to_string(&decimal), "0.00000");
+        let decimal = Decimal::from_i64(0, 5, 5);
+        assert_eq!(decimal_to_string(&decimal), "0.00000");
+        let decimal = Decimal::from_bytes(ByteArray::from(vec![]), 5, 5);
+        assert_eq!(decimal_to_string(&decimal), "0.00000");
+    }
 }
