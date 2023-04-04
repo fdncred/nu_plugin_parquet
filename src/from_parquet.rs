@@ -1,6 +1,7 @@
 use bytes::Bytes;
 use chrono::{DateTime, Duration, FixedOffset, TimeZone};
 use indexmap::map::IndexMap;
+use nu_plugin::LabeledError;
 use nu_protocol::{ShellError, Span, Spanned, Value};
 use parquet::basic::{ConvertedType, LogicalType, TimeUnit, Type as PhysicalType};
 use parquet::data_type::{AsBytes, Decimal};
@@ -126,52 +127,72 @@ fn decimal_to_string(decimal: &Decimal) -> String {
     }
 }
 
-pub fn from_parquet_bytes(bytes: Vec<u8>, span: Span) -> Value {
+pub fn from_parquet_bytes(bytes: Vec<u8>, span: Span) -> Result<Value, LabeledError> {
     let cursor = Bytes::from(bytes);
-    let reader = SerializedFileReader::new(cursor).unwrap();
-    let iter = reader.get_row_iter(None).unwrap();
-    let mut vals = Vec::new();
-    for record in iter {
-        let row = convert_parquet_row(record, span);
-        vals.push(row);
+    match SerializedFileReader::new(cursor) {
+        Ok(reader) => match reader.get_row_iter(None) {
+            Ok(iter) => {
+                let mut vals = Vec::new();
+                for record in iter {
+                    let row = convert_parquet_row(record, span);
+                    vals.push(row);
+                }
+                Ok(Value::List { vals, span })
+            }
+            Err(e) => Err(LabeledError {
+                label: "Could not read rows".into(),
+                msg: format!("{}", e),
+                span: Some(span),
+            }),
+        },
+        Err(e) => Err(LabeledError {
+            label: "Could not read Parquet file".into(),
+            msg: format!("{}", e),
+            span: Some(span),
+        }),
     }
-    Value::List { vals, span }
 }
 
-pub fn metadata_from_parquet_bytes(bytes: Vec<u8>, span: Span) -> Value {
+pub fn metadata_from_parquet_bytes(bytes: Vec<u8>, span: Span) -> Result<Value, LabeledError> {
     let cursor = Bytes::from(bytes);
-    let reader = SerializedFileReader::new(cursor).unwrap();
-    let metadata = reader.metadata();
+    match SerializedFileReader::new(cursor) {
+        Ok(reader) => {
+            let metadata = reader.metadata();
+            let mut val = IndexMap::new();
+            let file_metadata = metadata.file_metadata();
+            val.insert(
+                "version".to_string(),
+                Value::int(file_metadata.version() as i64, span),
+            );
+            val.insert(
+                "creator".to_string(),
+                Value::string(file_metadata.created_by().unwrap_or(""), span),
+            );
+            val.insert(
+                "num_rows".to_string(),
+                Value::int(file_metadata.num_rows() as i64, span),
+            );
+            val.insert(
+                "key_values".to_string(),
+                key_value_metadata_to_value(file_metadata.key_value_metadata(), span),
+            );
+            val.insert(
+                "schema".to_string(),
+                schema_descriptor_to_value(file_metadata.schema_descr(), span),
+            );
+            val.insert(
+                "row_groups".to_string(),
+                row_groups_to_value(metadata.row_groups(), span),
+            );
 
-    let mut val = IndexMap::new();
-
-    let file_metadata = metadata.file_metadata();
-    val.insert(
-        "version".to_string(),
-        Value::int(file_metadata.version() as i64, span),
-    );
-    val.insert(
-        "creator".to_string(),
-        Value::string(file_metadata.created_by().unwrap_or(""), span),
-    );
-    val.insert(
-        "num_rows".to_string(),
-        Value::int(file_metadata.num_rows() as i64, span),
-    );
-    val.insert(
-        "key_values".to_string(),
-        key_value_metadata_to_value(file_metadata.key_value_metadata(), span),
-    );
-    val.insert(
-        "schema".to_string(),
-        schema_descriptor_to_value(file_metadata.schema_descr(), span),
-    );
-    val.insert(
-        "row_groups".to_string(),
-        row_groups_to_value(metadata.row_groups(), span),
-    );
-
-    Value::from(Spanned { item: val, span })
+            Ok(Value::from(Spanned { item: val, span }))
+        }
+        Err(e) => Err(LabeledError {
+            label: "Could not read Parquet file".into(),
+            msg: format!("{}", e),
+            span: Some(span),
+        }),
+    }
 }
 
 fn key_value_metadata_to_value(key_value_metadata: Option<&Vec<KeyValue>>, span: Span) -> Value {

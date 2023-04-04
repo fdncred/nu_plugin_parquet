@@ -52,11 +52,8 @@ impl Plugin for FromParquet {
         assert_eq!(name, "from parquet");
         match input {
             Value::Binary { val, span } => match call.has_flag("metadata") {
-                true => Ok(crate::from_parquet::metadata_from_parquet_bytes(
-                    val.clone(),
-                    *span,
-                )),
-                false => Ok(crate::from_parquet::from_parquet_bytes(val.clone(), *span)),
+                true => crate::from_parquet::metadata_from_parquet_bytes(val.clone(), *span),
+                false => crate::from_parquet::from_parquet_bytes(val.clone(), *span),
             },
             v => Err(LabeledError {
                 label: "Expected binary from pipeline".into(),
