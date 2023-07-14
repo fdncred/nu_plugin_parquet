@@ -1,25 +1,19 @@
 [package]
-name = "nu_plugin_from_parquet"
-version = "0.0.2"
-authors = ["Jake Swenson <jake@jakeswenson.com>", "Darren Schroeder"]
-edition = "2021"
-repository = "https://github.com/jakeswenson/nu_plugin_from_parquet"
+authors = ["Darren Schroeder", "Jake Swenson <jake@jakeswenson.com>"]
 description = "nu plugin to add parquet support"
+edition = "2021"
 license = "MIT"
+name = "nu_plugin_from_parquet"
+repository = "https://github.com/jakeswenson/nu_plugin_from_parquet"
+version = "0.0.3"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
 # nu-plugin = "0.74.0"
 # nu-protocol = "0.74.0"
-nu-plugin = { path = "../nushell/crates/nu-plugin", version = "0.81.1"}
-nu-protocol = { path = "../nushell/crates/nu-protocol", version="0.81.1"}
 bytes = "1.4.0"
 chrono = { version = "0.4.26", features = ["serde"] }
-parquet = "42.0.0"
-indexmap = "1.9.3"
-
-# Would be nice if this worked but it does not
-# [patch.crates-io]
-# nu-plugin = { git = "https://github.com/nushell/nushell/", branch = "main"}
-# nu-protocol = { git = "https://gitnub.com/nushell/nushell/", branch = "main"}
+nu-plugin = { path = "../nushell/crates/nu-plugin", version = "0.82.1" }
+nu-protocol = { path = "../nushell/crates/nu-protocol", version = "0.82.1" }
+parquet = "43.0.0"

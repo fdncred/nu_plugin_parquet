@@ -1,6 +1,5 @@
 use bytes::Bytes;
 use chrono::{DateTime, Duration, FixedOffset, TimeZone};
-use indexmap::map::IndexMap;
 use nu_plugin::LabeledError;
 use nu_protocol::{ShellError, Span, Spanned, Value};
 use parquet::basic::{ConvertedType, LogicalType, TimeUnit, Type as PhysicalType};
@@ -10,6 +9,7 @@ use parquet::file::reader::FileReader;
 use parquet::file::serialized_reader::SerializedFileReader;
 use parquet::record::{Field, Row};
 use parquet::schema::types::{SchemaDescriptor, Type};
+use std::collections::HashMap;
 use std::convert::TryInto;
 use std::ops::Add;
 
@@ -134,8 +134,19 @@ pub fn from_parquet_bytes(bytes: Vec<u8>, span: Span) -> Result<Value, LabeledEr
             Ok(iter) => {
                 let mut vals = Vec::new();
                 for record in iter {
-                    let row = convert_parquet_row(record, span);
-                    vals.push(row);
+                    match record {
+                        Ok(rec) => {
+                            let row = convert_parquet_row(rec, span);
+                            vals.push(row);
+                        }
+                        Err(e) => {
+                            return Err(LabeledError {
+                                label: "Could not read rows".into(),
+                                msg: format!("{}", e),
+                                span: Some(span),
+                            })
+                        }
+                    }
                 }
                 Ok(Value::List { vals, span })
             }
@@ -158,7 +169,7 @@ pub fn metadata_from_parquet_bytes(bytes: Vec<u8>, span: Span) -> Result<Value, 
     match SerializedFileReader::new(cursor) {
         Ok(reader) => {
             let metadata = reader.metadata();
-            let mut val = IndexMap::new();
+            let mut val = HashMap::new();
             let file_metadata = metadata.file_metadata();
             val.insert(
                 "version".to_string(),
@@ -199,7 +210,7 @@ fn key_value_metadata_to_value(key_value_metadata: Option<&Vec<KeyValue>>, span:
     let mut vals = Vec::new();
     if let Some(key_value_metadata) = key_value_metadata {
         for key_value in key_value_metadata {
-            let mut val = IndexMap::new();
+            let mut val = HashMap::new();
             val.insert(
                 "key".to_string(),
                 Value::string(key_value.key.clone(), span),
@@ -215,7 +226,7 @@ fn key_value_metadata_to_value(key_value_metadata: Option<&Vec<KeyValue>>, span:
 }
 
 fn schema_descriptor_to_value(schema: &SchemaDescriptor, span: Span) -> Value {
-    let mut val = IndexMap::new();
+    let mut val = HashMap::new();
     val.insert("name".to_string(), Value::string(schema.name(), span));
     val.insert(
         "num_columns".to_string(),
@@ -237,7 +248,7 @@ fn schema_to_value(tp: &Type, span: Span) -> Value {
             scale,
             precision,
         } => {
-            let mut val = IndexMap::new();
+            let mut val = HashMap::new();
             val.insert(
                 "name".to_string(),
                 Value::string(basic_info.name().clone(), span),
@@ -372,7 +383,7 @@ fn time_unit_to_string(unit: TimeUnit) -> String {
 fn row_groups_to_value(row_groups: &[RowGroupMetaData], span: Span) -> Value {
     let mut vals = Vec::new();
     for (_, row_group) in row_groups.iter().enumerate() {
-        let mut val = IndexMap::new();
+        let mut val = HashMap::new();
         val.insert(
             "num_rows".to_string(),
             Value::int(row_group.num_rows() as i64, span),
