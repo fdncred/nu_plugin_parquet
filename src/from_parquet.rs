@@ -23,7 +23,7 @@ fn convert_to_nu(field: &Field, span: Span) -> Value {
     };
     match field {
         Field::Null => Value::nothing(span),
-        Field::Bool(b) => Value::boolean(*b, span),
+        Field::Bool(b) => Value::bool(*b, span),
         Field::Byte(b) => Value::binary(vec![*b as u8], span),
         Field::UByte(b) => Value::binary(vec![*b], span),
         Field::Short(s) => Value::int((*s).into(), span),
