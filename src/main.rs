@@ -37,7 +37,7 @@ impl Plugin for FromParquet {
                 },
                 PluginExample {
                     description: "Convert metadata from .parquet binary into table".into(),
-                    example: "open file.parquet | from parquet --metadata".into(),
+                    example: "open -r file.parquet | from parquet --metadata".into(),
                     result: None,
                 },
             ])]

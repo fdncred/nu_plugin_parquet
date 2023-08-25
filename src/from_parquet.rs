@@ -1,17 +1,19 @@
 use bytes::Bytes;
 use chrono::{DateTime, Duration, FixedOffset, TimeZone};
 use nu_plugin::LabeledError;
-use nu_protocol::{ShellError, Span, Spanned, Value};
-use parquet::basic::{ConvertedType, LogicalType, TimeUnit, Type as PhysicalType};
-use parquet::data_type::{AsBytes, Decimal};
-use parquet::file::metadata::{KeyValue, RowGroupMetaData};
-use parquet::file::reader::FileReader;
-use parquet::file::serialized_reader::SerializedFileReader;
-use parquet::record::{Field, Row};
-use parquet::schema::types::{SchemaDescriptor, Type};
-use std::collections::HashMap;
-use std::convert::TryInto;
-use std::ops::Add;
+use nu_protocol::{record, Record, ShellError, Span, Value};
+use parquet::{
+    basic::{ConvertedType, LogicalType, TimeUnit, Type as PhysicalType},
+    data_type::{AsBytes, Decimal},
+    file::{
+        metadata::{KeyValue, RowGroupMetaData},
+        reader::FileReader,
+        serialized_reader::SerializedFileReader,
+    },
+    record::{Field, Row},
+    schema::types::{SchemaDescriptor, Type},
+};
+use std::{convert::TryInto, ops::Add};
 
 fn convert_to_nu(field: &Field, span: Span) -> Value {
     let epoch: DateTime<FixedOffset> = match FixedOffset::west_opt(0)
@@ -41,6 +43,7 @@ fn convert_to_nu(field: &Field, span: Span) -> Value {
                     span,
                     help: Some(e.to_string()),
                 }),
+                span,
             }),
         Field::Float(f) => Value::float((*f).into(), span),
         Field::Double(f) => Value::float(*f, span),
@@ -72,13 +75,12 @@ fn convert_to_nu(field: &Field, span: Span) -> Value {
 }
 
 fn convert_parquet_row(row: Row, span: Span) -> Value {
-    let mut cols = vec![];
-    let mut vals = vec![];
+    let mut record = Record::new();
     for (name, field) in row.get_column_iter() {
-        cols.push(name.clone());
-        vals.push(convert_to_nu(field, span));
+        record.push(name, convert_to_nu(field, span));
     }
-    Value::Record { cols, vals, span }
+
+    Value::record(record, span)
 }
 
 fn decimal_to_string(decimal: &Decimal) -> String {
@@ -169,34 +171,18 @@ pub fn metadata_from_parquet_bytes(bytes: Vec<u8>, span: Span) -> Result<Value, 
     match SerializedFileReader::new(cursor) {
         Ok(reader) => {
             let metadata = reader.metadata();
-            let mut val = HashMap::new();
             let file_metadata = metadata.file_metadata();
-            val.insert(
-                "version".to_string(),
-                Value::int(file_metadata.version() as i64, span),
-            );
-            val.insert(
-                "creator".to_string(),
-                Value::string(file_metadata.created_by().unwrap_or(""), span),
-            );
-            val.insert(
-                "num_rows".to_string(),
-                Value::int(file_metadata.num_rows() as i64, span),
-            );
-            val.insert(
-                "key_values".to_string(),
-                key_value_metadata_to_value(file_metadata.key_value_metadata(), span),
-            );
-            val.insert(
-                "schema".to_string(),
-                schema_descriptor_to_value(file_metadata.schema_descr(), span),
-            );
-            val.insert(
-                "row_groups".to_string(),
-                row_groups_to_value(metadata.row_groups(), span),
-            );
-
-            Ok(Value::from(Spanned { item: val, span }))
+            Ok(Value::record(
+                record! {
+                    "version" => Value::int(file_metadata.version() as i64, span),
+                    "creator" => Value::string(file_metadata.created_by().unwrap_or(""), span),
+                    "num_rows" => Value::int(file_metadata.num_rows() as i64, span),
+                    "key_values" => key_value_metadata_to_value(file_metadata.key_value_metadata(), span),
+                    "schema" => schema_descriptor_to_value(file_metadata.schema_descr(), span),
+                    "row_groups" => row_groups_to_value(metadata.row_groups(), span),
+                },
+                span,
+            ))
         }
         Err(e) => Err(LabeledError {
             label: "Could not read Parquet file".into(),
@@ -210,33 +196,27 @@ fn key_value_metadata_to_value(key_value_metadata: Option<&Vec<KeyValue>>, span:
     let mut vals = Vec::new();
     if let Some(key_value_metadata) = key_value_metadata {
         for key_value in key_value_metadata {
-            let mut val = HashMap::new();
-            val.insert(
-                "key".to_string(),
-                Value::string(key_value.key.clone(), span),
-            );
-            val.insert(
-                "value".to_string(),
-                Value::string(key_value.value.clone().unwrap_or("".to_string()), span),
-            );
-            vals.push(Value::from(Spanned { item: val, span }));
+            vals.push(Value::record(
+                record! {
+                    "key" => Value::string(key_value.key.clone(), span),
+                    "value" => Value::string(key_value.value.clone().unwrap_or("".to_string()), span),
+                },
+                span,
+            ));
         }
     }
     Value::List { vals, span }
 }
 
 fn schema_descriptor_to_value(schema: &SchemaDescriptor, span: Span) -> Value {
-    let mut val = HashMap::new();
-    val.insert("name".to_string(), Value::string(schema.name(), span));
-    val.insert(
-        "num_columns".to_string(),
-        Value::int(schema.num_columns() as i64, span),
-    );
-    val.insert(
-        "schema".to_string(),
-        schema_to_value(schema.root_schema(), span),
-    );
-    Value::from(Spanned { item: val, span })
+    Value::record(
+        record! {
+            "name" => Value::string(schema.name(), span),
+            "num_columns" => Value::int(schema.num_columns() as i64, span),
+            "schema" => schema_to_value(schema.root_schema(), span),
+        },
+        span,
+    )
 }
 
 fn schema_to_value(tp: &Type, span: Span) -> Value {
@@ -247,32 +227,18 @@ fn schema_to_value(tp: &Type, span: Span) -> Value {
             type_length,
             scale,
             precision,
-        } => {
-            let mut val = HashMap::new();
-            val.insert(
-                "name".to_string(),
-                Value::string(basic_info.name().clone(), span),
-            );
-            val.insert(
-                "repetition".to_string(),
-                Value::string(basic_info.repetition().to_string(), span),
-            );
-            val.insert(
-                "type".to_string(),
-                Value::string(physical_type.to_string(), span),
-            );
-            val.insert(
-                "type_length".to_string(),
-                match physical_type {
+        } => Value::record(
+            record! {
+                "name" => Value::string(basic_info.name().clone(), span),
+                "repetition" => Value::string(basic_info.repetition().to_string(), span),
+                "type" => Value::string(physical_type.to_string(), span),
+                "type_length" => match physical_type {
                     PhysicalType::BYTE_ARRAY | PhysicalType::FIXED_LEN_BYTE_ARRAY => {
                         Value::int(type_length as i64, span)
                     }
                     _ => Value::nothing(span),
                 },
-            );
-            val.insert(
-                "logical_type".to_string(),
-                Value::string(
+                "logical_type" => Value::string(
                     logical_or_converted_type_to_string(
                         basic_info.logical_type(),
                         basic_info.converted_type(),
@@ -281,9 +247,9 @@ fn schema_to_value(tp: &Type, span: Span) -> Value {
                     ),
                     span,
                 ),
-            );
-            Value::from(Spanned { item: val, span })
-        }
+            },
+            span,
+        ),
         Type::GroupType {
             basic_info: _,
             ref fields,
@@ -383,16 +349,13 @@ fn time_unit_to_string(unit: TimeUnit) -> String {
 fn row_groups_to_value(row_groups: &[RowGroupMetaData], span: Span) -> Value {
     let mut vals = Vec::new();
     for (_, row_group) in row_groups.iter().enumerate() {
-        let mut val = HashMap::new();
-        val.insert(
-            "num_rows".to_string(),
-            Value::int(row_group.num_rows() as i64, span),
-        );
-        val.insert(
-            "total_byte_size".to_string(),
-            Value::int(row_group.total_byte_size() as i64, span),
-        );
-        vals.push(Value::from(Spanned { item: val, span }));
+        vals.push(Value::record(
+            record! {
+                "num_rows" => Value::int(row_group.num_rows() as i64, span),
+                "total_byte_size" => Value::int(row_group.total_byte_size() as i64, span),
+            },
+            span,
+        ));
     }
     Value::List { vals, span }
 }
