@@ -26,11 +26,9 @@ register ~/.cargo/bin/nu_plugin_from_parquet
 ```
 
 ## Usage
-```rust
+```bash
 open -r sample.parquet | from parquet | first 10
 ```
-
-and the output will be:
 
 ```bash
 ╭───┬───────────────┬────┬────────────┬───────────┬──────────────┬────────┬──────────────┬──────────────┬──────────────┬────────────┬───────────┬──────────────┬──────────╮
@@ -57,6 +55,9 @@ Display metadata, instead of data, from the parquet file by passing the `--metad
 
 ```bash
 open -r sample.parquet | from parquet --metadata  | table -e
+```
+
+```bash
 ╭────────────┬─────────────────────────────────────────────────────────────────────────────────────────────────────╮
 │ version    │ 1                                                                                                   │
 │ creator    │ parquet-mr version 1.8.1 (build 4aba4dae7bb0d4edbcf7923ae1339f28fd3f7fcf)                           │
