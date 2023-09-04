@@ -26,8 +26,13 @@ register ~/.cargo/bin/nu_plugin_from_parquet
 ```
 
 ## Usage
-```bash
+```rust
 open -r sample.parquet | from parquet | first 10
+```
+
+and the output will be:
+
+```bash
 ╭───┬───────────────┬────┬────────────┬───────────┬──────────────┬────────┬──────────────┬──────────────┬──────────────┬────────────┬───────────┬──────────────┬──────────╮
 │ # │ registration… │ id │ first_name │ last_name │    email     │ gender │  ip_address  │      cc      │   country    │ birthdate  │  salary   │    title     │ comments │
 ├───┼───────────────┼────┼────────────┼───────────┼──────────────┼────────┼──────────────┼──────────────┼──────────────┼────────────┼───────────┼──────────────┼──────────┤
@@ -51,7 +56,7 @@ open -r sample.parquet | from parquet | first 10
 Display metadata, instead of data, from the parquet file by passing the `--metadata, -m` flag to `from parquet`:
 
 ```bash
-open -r sample.parquet | from parquet --metadata  | table -e 
+open -r sample.parquet | from parquet --metadata  | table -e
 ╭────────────┬─────────────────────────────────────────────────────────────────────────────────────────────────────╮
 │ version    │ 1                                                                                                   │
 │ creator    │ parquet-mr version 1.8.1 (build 4aba4dae7bb0d4edbcf7923ae1339f28fd3f7fcf)                           │
@@ -85,4 +90,3 @@ open -r sample.parquet | from parquet --metadata  | table -e
 │            │ ╰───┴──────────┴─────────────────╯                                                                  │
 ╰────────────┴─────────────────────────────────────────────────────────────────────────────────────────────────────╯
 ```
-

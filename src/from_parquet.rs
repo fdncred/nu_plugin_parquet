@@ -43,7 +43,7 @@ fn convert_to_nu(field: &Field, span: Span) -> Value {
                     span,
                     help: Some(e.to_string()),
                 }),
-                span,
+                internal_span: span,
             }),
         Field::Float(f) => Value::float((*f).into(), span),
         Field::Double(f) => Value::float(*f, span),
@@ -51,15 +51,15 @@ fn convert_to_nu(field: &Field, span: Span) -> Value {
         Field::Bytes(bytes) => Value::binary(bytes.data().to_vec(), span),
         Field::Date(days_since_epoch) => {
             let val = epoch.add(Duration::days(*days_since_epoch as i64));
-            Value::Date { val, span }
+            Value::date(val, span)
         }
         Field::TimestampMillis(millis_since_epoch) => {
             let val = epoch.add(Duration::milliseconds(*millis_since_epoch as i64));
-            Value::Date { val, span }
+            Value::date(val, span)
         }
         Field::TimestampMicros(micros_since_epoch) => {
             let val = epoch.add(Duration::microseconds(*micros_since_epoch as i64));
-            Value::Date { val, span }
+            Value::date(val, span)
         }
         Field::Decimal(d) => Value::string(decimal_to_string(d), span),
         Field::Group(_row) => {
@@ -150,7 +150,7 @@ pub fn from_parquet_bytes(bytes: Vec<u8>, span: Span) -> Result<Value, LabeledEr
                         }
                     }
                 }
-                Ok(Value::List { vals, span })
+                Ok(Value::list(vals, span))
             }
             Err(e) => Err(LabeledError {
                 label: "Could not read rows".into(),
@@ -205,7 +205,7 @@ fn key_value_metadata_to_value(key_value_metadata: Option<&Vec<KeyValue>>, span:
             ));
         }
     }
-    Value::List { vals, span }
+    Value::list(vals, span)
 }
 
 fn schema_descriptor_to_value(schema: &SchemaDescriptor, span: Span) -> Value {
@@ -258,7 +258,7 @@ fn schema_to_value(tp: &Type, span: Span) -> Value {
             for field in fields {
                 vals.push(schema_to_value(field, span));
             }
-            Value::List { vals, span }
+            Value::list(vals, span)
         }
     }
 }
@@ -357,7 +357,7 @@ fn row_groups_to_value(row_groups: &[RowGroupMetaData], span: Span) -> Value {
             span,
         ));
     }
-    Value::List { vals, span }
+    Value::list(vals, span)
 }
 
 #[cfg(test)]
