@@ -225,7 +225,7 @@ fn schema_to_value(tp: &Type, span: Span) -> Value {
             precision,
         } => {
             let rec = record!(
-                "name" => Value::string(basic_info.name().clone(), span),
+                "name" => Value::string(basic_info.name(), span),
                 "repetition" => Value::string(basic_info.repetition().to_string(), span),
                 "type" => Value::string(physical_type.to_string(), span),
                 "type_length" => match physical_type {
