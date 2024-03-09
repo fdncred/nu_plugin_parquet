@@ -1,6 +1,8 @@
 mod from_parquet;
 
-use nu_plugin::{serve_plugin, EvaluatedCall, JsonSerializer, LabeledError, Plugin};
+use nu_plugin::{
+    serve_plugin, EngineInterface, EvaluatedCall, JsonSerializer, LabeledError, Plugin,
+};
 use nu_protocol::{Category, PluginExample, PluginSignature, Type, Value};
 
 struct FromParquet;
@@ -44,9 +46,9 @@ impl Plugin for FromParquet {
     }
 
     fn run(
-        &mut self,
+        &self,
         name: &str,
-        _config: &Option<Value>,
+        _engine: &EngineInterface,
         call: &EvaluatedCall,
         input: &Value,
     ) -> Result<Value, LabeledError> {
