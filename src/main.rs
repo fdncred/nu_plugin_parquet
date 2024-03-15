@@ -13,13 +13,8 @@ impl Plugin for FromParquetPlugin {
         vec![Box::new(FromParquet)]
     }
 }
-struct FromParquet;
 
-impl FromParquet {
-    fn new() -> Self {
-        Self {}
-    }
-}
+struct FromParquet;
 
 impl SimplePluginCommand for FromParquet {
     type Plugin = FromParquetPlugin;
