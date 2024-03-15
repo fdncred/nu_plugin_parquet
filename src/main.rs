@@ -1,10 +1,18 @@
 mod from_parquet;
 
 use nu_plugin::{
-    serve_plugin, EngineInterface, EvaluatedCall, JsonSerializer, LabeledError, Plugin,
+    serve_plugin, EngineInterface, EvaluatedCall, LabeledError, MsgPackSerializer, Plugin,
+    PluginCommand, SimplePluginCommand,
 };
 use nu_protocol::{Category, PluginExample, PluginSignature, Type, Value};
 
+pub struct FromParquetPlugin;
+
+impl Plugin for FromParquetPlugin {
+    fn commands(&self) -> Vec<Box<dyn PluginCommand<Plugin = Self>>> {
+        vec![Box::new(FromParquet)]
+    }
+}
 struct FromParquet;
 
 impl FromParquet {
@@ -13,9 +21,11 @@ impl FromParquet {
     }
 }
 
-impl Plugin for FromParquet {
-    fn signature(&self) -> Vec<PluginSignature> {
-        vec![PluginSignature::build("from parquet")
+impl SimplePluginCommand for FromParquet {
+    type Plugin = FromParquetPlugin;
+
+    fn signature(&self) -> PluginSignature {
+        PluginSignature::build("from parquet")
             .usage("Convert from .parquet binary into table")
             .switch(
                 "metadata",
@@ -42,17 +52,16 @@ impl Plugin for FromParquet {
                     example: "open -r file.parquet | from parquet --metadata".into(),
                     result: None,
                 },
-            ])]
+            ])
     }
 
     fn run(
         &self,
-        name: &str,
+        _plugin: &FromParquetPlugin,
         _engine: &EngineInterface,
         call: &EvaluatedCall,
         input: &Value,
     ) -> Result<Value, LabeledError> {
-        assert_eq!(name, "from parquet");
         let span = input.span();
         match input {
             Value::Binary { val, .. } => match call.has_flag("metadata")? {
@@ -69,5 +78,5 @@ impl Plugin for FromParquet {
 }
 
 fn main() {
-    serve_plugin(&mut FromParquet::new(), JsonSerializer {});
+    serve_plugin(&mut FromParquetPlugin, MsgPackSerializer {});
 }
