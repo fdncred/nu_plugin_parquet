@@ -1,10 +1,10 @@
 mod from_parquet;
 
 use nu_plugin::{
-    serve_plugin, EngineInterface, EvaluatedCall, LabeledError, MsgPackSerializer, Plugin,
-    PluginCommand, SimplePluginCommand,
+    serve_plugin, EngineInterface, EvaluatedCall, MsgPackSerializer, Plugin, PluginCommand,
+    SimplePluginCommand,
 };
-use nu_protocol::{Category, PluginExample, PluginSignature, Type, Value};
+use nu_protocol::{Category, Example, LabeledError, Signature, Type, Value};
 
 pub struct FromParquetPlugin;
 
@@ -19,9 +19,15 @@ struct FromParquet;
 impl SimplePluginCommand for FromParquet {
     type Plugin = FromParquetPlugin;
 
-    fn signature(&self) -> PluginSignature {
-        PluginSignature::build("from parquet")
-            .usage("Convert from .parquet binary into table")
+    fn name(&self) -> &str {
+        "from parquet"
+    }
+
+    fn usage(&self) -> &str {
+        "Convert from .parquet binary into table"
+    }
+    fn signature(&self) -> Signature {
+        Signature::build(PluginCommand::name(self))
             .switch(
                 "metadata",
                 "Convert metadata from .parquet binary into table",
@@ -31,23 +37,26 @@ impl SimplePluginCommand for FromParquet {
             .input_output_types(vec![(Type::Binary, Type::Any)])
             .category(Category::Experimental)
             .filter()
-            .plugin_examples(vec![
-                PluginExample {
-                    description: "Convert from .parquet binary into table".into(),
-                    example: "open --raw file.parquet | from parquet".into(),
-                    result: None,
-                },
-                PluginExample {
-                    description: "Convert from .parquet binary into table".into(),
-                    example: "open file.parquet".into(),
-                    result: None,
-                },
-                PluginExample {
-                    description: "Convert metadata from .parquet binary into table".into(),
-                    example: "open -r file.parquet | from parquet --metadata".into(),
-                    result: None,
-                },
-            ])
+    }
+
+    fn examples(&self) -> Vec<Example> {
+        vec![
+            Example {
+                description: "Convert from .parquet binary into table".into(),
+                example: "open --raw file.parquet | from parquet".into(),
+                result: None,
+            },
+            Example {
+                description: "Convert from .parquet binary into table".into(),
+                example: "open file.parquet".into(),
+                result: None,
+            },
+            Example {
+                description: "Convert metadata from .parquet binary into table".into(),
+                example: "open -r file.parquet | from parquet --metadata".into(),
+                result: None,
+            },
+        ]
     }
 
     fn run(
@@ -63,11 +72,13 @@ impl SimplePluginCommand for FromParquet {
                 true => crate::from_parquet::metadata_from_parquet_bytes(val.clone(), span),
                 false => crate::from_parquet::from_parquet_bytes(val.clone(), span),
             },
-            v => Err(LabeledError {
-                label: "Expected binary from pipeline".into(),
-                msg: format!("requires binary input, got {}", v.get_type()),
-                span: Some(call.head),
-            }),
+            v => {
+                return Err(LabeledError::new(format!(
+                    "requires binary input, got {}",
+                    v.get_type()
+                ))
+                .with_label("Expected binary from pipeline", call.head))
+            }
         }
     }
 }

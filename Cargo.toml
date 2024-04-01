@@ -5,7 +5,7 @@ edition = "2021"
 license = "MIT"
 name = "nu_plugin_from_parquet"
 repository = "https://github.com/jakeswenson/nu_plugin_from_parquet"
-version = "0.4.0"
+version = "0.5.0"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 

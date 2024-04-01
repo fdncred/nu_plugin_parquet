@@ -1,7 +1,6 @@
 use bytes::Bytes;
 use chrono::{DateTime, Duration, FixedOffset, TimeZone};
-use nu_plugin::LabeledError;
-use nu_protocol::{record, Record, ShellError, Span, Value};
+use nu_protocol::{record, LabeledError, Record, ShellError, Span, Value};
 use parquet::basic::{ConvertedType, LogicalType, TimeUnit, Type as PhysicalType};
 use parquet::data_type::{AsBytes, Decimal};
 use parquet::file::metadata::{KeyValue, RowGroupMetaData};
@@ -140,27 +139,20 @@ pub fn from_parquet_bytes(bytes: Vec<u8>, span: Span) -> Result<Value, LabeledEr
                             vals.push(row);
                         }
                         Err(e) => {
-                            return Err(LabeledError {
-                                label: "Could not read rows".into(),
-                                msg: format!("{}", e),
-                                span: Some(span),
-                            })
+                            return Err(LabeledError::new(format!("{}", e))
+                                .with_label("Could not read rows", span));
                         }
                     }
                 }
                 Ok(Value::list(vals, span))
             }
-            Err(e) => Err(LabeledError {
-                label: "Could not read rows".into(),
-                msg: format!("{}", e),
-                span: Some(span),
-            }),
+            Err(e) => {
+                Err(LabeledError::new(format!("{}", e)).with_label("Could not read rows", span))
+            }
         },
-        Err(e) => Err(LabeledError {
-            label: "Could not read Parquet file".into(),
-            msg: format!("{}", e),
-            span: Some(span),
-        }),
+        Err(e) => {
+            Err(LabeledError::new(format!("{}", e)).with_label("Could not read Parquet file", span))
+        }
     }
 }
 
@@ -180,11 +172,9 @@ pub fn metadata_from_parquet_bytes(bytes: Vec<u8>, span: Span) -> Result<Value, 
             );
             Ok(Value::record(rec, span))
         }
-        Err(e) => Err(LabeledError {
-            label: "Could not read Parquet file".into(),
-            msg: format!("{}", e),
-            span: Some(span),
-        }),
+        Err(e) => {
+            Err(LabeledError::new(format!("{}", e)).with_label("Could not read Parquet file", span))
+        }
     }
 }
 
