@@ -9,6 +9,10 @@ use nu_protocol::{Category, Example, LabeledError, Signature, Type, Value};
 pub struct FromParquetPlugin;
 
 impl Plugin for FromParquetPlugin {
+    fn version(&self) -> String {
+        env!("CARGO_PKG_VERSION").into()
+    }
+
     fn commands(&self) -> Vec<Box<dyn PluginCommand<Plugin = Self>>> {
         vec![Box::new(FromParquet)]
     }
