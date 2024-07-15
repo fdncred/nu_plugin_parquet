@@ -103,7 +103,7 @@ impl SimplePluginCommand for ToParquet {
     fn signature(&self) -> Signature {
         Signature::build(PluginCommand::name(self))
             .allow_variants_without_examples(true)
-            .input_output_types(vec![(Type::Any, Type::String)])
+            .input_output_types(vec![(Type::Any, Type::Binary)])
             .category(Category::Experimental)
             .filter()
     }
