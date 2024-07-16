@@ -1,15 +1,23 @@
 use bytes::Bytes;
 use chrono::{DateTime, Duration, FixedOffset, TimeZone};
+use nu_protocol::record::Columns;
+use nu_protocol::Type as NuType;
 use nu_protocol::{record, LabeledError, Record, ShellError, Span, Value};
+use parquet::basic::Repetition;
 use parquet::basic::{ConvertedType, LogicalType, TimeUnit, Type as PhysicalType};
-use parquet::data_type::{AsBytes, Decimal};
+use parquet::column::writer::ColumnWriter;
+use parquet::data_type::{AsBytes, ByteArray, Decimal};
 use parquet::file::metadata::{KeyValue, RowGroupMetaData};
+use parquet::file::properties::WriterProperties;
 use parquet::file::reader::FileReader;
 use parquet::file::serialized_reader::SerializedFileReader;
+use parquet::file::writer::SerializedFileWriter;
 use parquet::record::{Field, Row};
 use parquet::schema::types::{SchemaDescriptor, Type};
 use std::convert::TryInto;
+use std::io::Cursor;
 use std::ops::Add;
+use std::sync::Arc;
 
 fn convert_to_nu(field: &Field, span: Span) -> Value {
     let epoch: DateTime<FixedOffset> = match FixedOffset::west_opt(0)
@@ -335,6 +343,160 @@ fn row_groups_to_value(row_groups: &[RowGroupMetaData], span: Span) -> Value {
         );
     }
     Value::record(vals, span)
+}
+
+pub fn to_parquet_bytes(table: &Vec<Value>, span: Span) -> Result<Value, LabeledError> {
+    let first_record = match table.first() {
+        Some(Value::Record { val, internal_span: _ }) => val,
+        Some(_) => return Err(LabeledError::new("Not a Table")),
+        None => return Err(LabeledError::new("Empty table")),
+    };
+
+    let schema = infer_schema(&first_record)?;
+
+    // TODO use streaming plugin's protocol instead of doing everything at once?
+    let mut output_buffer = Vec::new();
+
+    let records = table
+        .into_iter()
+        .map(|r| match r {
+            Value::Record { val, internal_span: _ } => Ok(val.clone().into_owned()), // TODO return &Record ?
+            _ => Err(LabeledError::new("Not a table")),
+        })
+        .collect::<Result<Vec<_>, LabeledError>>()?;
+
+    let cursor = Cursor::new(&mut output_buffer);
+    write_records_to_parquet(schema, first_record.columns(), &records, cursor)?;
+
+    Ok(Value::binary(output_buffer, span))
+}
+
+fn write_records_to_parquet(
+    schema: Type,
+    mut columns: Columns,
+    records: &Vec<Record>,
+    cursor: Cursor<&mut Vec<u8>>,
+) -> Result<(), LabeledError> {
+    let props = Arc::new(WriterProperties::builder().build());
+    let mut writer = SerializedFileWriter::new(cursor, Arc::new(schema), props)
+        .map_err(|e| LabeledError::new(format!("Cannot create file writer: {}", e.to_string())))?;
+    let mut row_writer = writer
+        .next_row_group()
+        .map_err(|e| LabeledError::new(format!("Cannot create row writer: {}", e.to_string())))?;
+
+    while let Some(mut col_writer) = row_writer
+        .next_column()
+        .map_err(|e| LabeledError::new(e.to_string()))?
+    {
+        let column_name = columns.next().ok_or(LabeledError::new("No more column"))?;
+        let column_data = records
+            .into_iter()
+            .map(|r| {
+                r.get(column_name)
+                    .ok_or(LabeledError::new("No data in column"))
+            })
+            .collect::<Result<Vec<&Value>, _>>()?
+            .into_iter();
+
+        // Get the correct writer for each type
+        match col_writer.untyped() {
+            ColumnWriter::BoolColumnWriter(ref mut w) => {
+                let values = column_data
+                    .map(|v| {
+                        v.as_bool()
+                            .map_err(|_| LabeledError::new("Cannot convert to bool"))
+                    })
+                    .collect::<Result<Vec<_>, _>>()?;
+                w.write_batch(&values, None, None)
+                    .map_err(|e| LabeledError::new(e.to_string()))?;
+            }
+            ColumnWriter::Int64ColumnWriter(ref mut w) => {
+                let values = column_data
+                    .map(|v| {
+                        v.as_int()
+                        .or_else(|_| v.as_filesize())  // TODO : we loose the info that it was a file size
+                            .map_err(|_| LabeledError::new("Cannot convert to int"))
+                    })
+                    .collect::<Result<Vec<_>, _>>()?;
+                w.write_batch(&values, None, None)
+                    .map_err(|e| LabeledError::new(e.to_string()))?;
+            }
+            ColumnWriter::DoubleColumnWriter(ref mut w) => {
+                let values = column_data
+                    .map(|v| {
+                        v.as_f64()
+                            .map_err(|_| LabeledError::new("Cannot convert to float"))
+                    })
+                    .collect::<Result<Vec<_>, _>>()?;
+                w.write_batch(&values, None, None)
+                    .map_err(|e| LabeledError::new(e.to_string()))?;
+            }
+            ColumnWriter::ByteArrayColumnWriter(ref mut w) => {
+                let values = column_data
+                    .map(|v| {
+                        v.as_str()
+                            .map(|s| ByteArray::from(s))
+                            .map_err(|_| LabeledError::new("Cannot convert to byte array"))
+                    })
+                    .collect::<Result<Vec<_>, _>>()?;
+                w.write_batch(&values, None, None)
+                    .map_err(|e| LabeledError::new(e.to_string()))?;
+            }
+            _ => return Err(LabeledError::new("Type not supported")),
+        }
+        col_writer
+            .close()
+            .map_err(|e| LabeledError::new(e.to_string()))?;
+    }
+
+    row_writer
+        .close()
+        .map_err(|e| LabeledError::new(e.to_string()))?;
+    writer
+        .close()
+        .map_err(|e| LabeledError::new(e.to_string()))?;
+
+    Ok(())
+}
+
+fn infer_schema(record: &Record) -> Result<Type, LabeledError> {
+    let types: Vec<Arc<Type>> = record
+        .into_iter()
+        .map(|(column, value)| value_to_type(column, value))
+        // .map(Arc::new)
+        .map(|t| t.map(|i| Arc::new(i)))
+        .collect::<Result<_, _>>()?;
+    let schema = Type::group_type_builder("schema")
+        .with_fields(types)
+        .build()
+        .unwrap();
+    Ok(schema)
+}
+
+fn value_to_type(column_name: &str, value: &Value) -> Result<Type, LabeledError> {
+    let t = match value.get_type() {
+        NuType::Bool | NuType::Int | NuType::Float => {
+            let t = match value.get_type() {
+                NuType::Bool => PhysicalType::BOOLEAN,
+                NuType::Int => PhysicalType::INT64,
+                NuType::Float => PhysicalType::DOUBLE,
+                _ => panic!("Impossible"),
+            };
+            Type::primitive_type_builder(column_name, t)
+        }
+        NuType::String => Type::primitive_type_builder(column_name, PhysicalType::BYTE_ARRAY)
+            .with_converted_type(ConvertedType::UTF8),
+        NuType::Date => Type::primitive_type_builder(column_name, PhysicalType::INT64)
+            .with_converted_type(ConvertedType::DATE),
+        NuType::Filesize => Type::primitive_type_builder(column_name, PhysicalType::INT64),
+        _ => {
+            return Err(LabeledError::new(format!(
+                "Cannot store {} type (not supported)",
+                value.get_type()
+            )))
+        }
+    };
+    Ok(t.with_repetition(Repetition::REQUIRED).build().unwrap())
 }
 
 #[cfg(test)]
