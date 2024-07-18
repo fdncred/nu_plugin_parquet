@@ -3,8 +3,8 @@ authors = ["Darren Schroeder", "Jake Swenson <jake@jakeswenson.com>"]
 description = "nu plugin to add parquet support"
 edition = "2021"
 license = "MIT"
-name = "nu_plugin_from_parquet"
-repository = "https://github.com/jakeswenson/nu_plugin_from_parquet"
+name = "nu_plugin_parquet"
+repository = "https://github.com/fdncred/nu_plugin_parquet"
 version = "0.5.0"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
