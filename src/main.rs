@@ -119,31 +119,30 @@ impl SimplePluginCommand for ToParquet {
                 description: "Store as parquet file".into(),
                 example: "[{a:1}, {a: 2}] | save file.parquet".into(),
                 result: None,
-            }
+            },
         ]
     }
 
     fn run(
-            &self,
-            plugin: &Self::Plugin,
-            engine: &EngineInterface,
-            call: &EvaluatedCall,
-            input: &Value,
-        ) -> Result<Value, LabeledError> {
-            let span = input.span();
-            match input {
-                Value::List { vals, internal_span, .. } => crate::from_parquet::to_parquet_bytes(vals, span),
-                v => {
-                    return Err(LabeledError::new(format!(
-                        "requires table input, got {}",
-                        v.get_type()
-                    ))
-                    .with_label("Expected table from pipeline", call.head))
-                }
+        &self,
+        _plugin: &Self::Plugin,
+        _engine: &EngineInterface,
+        call: &EvaluatedCall,
+        input: &Value,
+    ) -> Result<Value, LabeledError> {
+        let span = input.span();
+        match input {
+            Value::List { vals, .. } => crate::from_parquet::to_parquet_bytes(vals, span),
+            v => {
+                return Err(LabeledError::new(format!(
+                    "requires table input, got {}",
+                    v.get_type()
+                ))
+                .with_label("Expected table from pipeline", call.head))
             }
+        }
     }
 }
-
 
 fn main() {
     serve_plugin(&mut ParquetPlugin, MsgPackSerializer {});

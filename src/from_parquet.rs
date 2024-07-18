@@ -347,7 +347,10 @@ fn row_groups_to_value(row_groups: &[RowGroupMetaData], span: Span) -> Value {
 
 pub fn to_parquet_bytes(table: &Vec<Value>, span: Span) -> Result<Value, LabeledError> {
     let first_record = match table.first() {
-        Some(Value::Record { val, internal_span: _ }) => val,
+        Some(Value::Record {
+            val,
+            internal_span: _,
+        }) => val,
         Some(_) => return Err(LabeledError::new("Not a Table")),
         None => return Err(LabeledError::new("Empty table")),
     };
@@ -360,7 +363,10 @@ pub fn to_parquet_bytes(table: &Vec<Value>, span: Span) -> Result<Value, Labeled
     let records = table
         .into_iter()
         .map(|r| match r {
-            Value::Record { val, internal_span: _ } => Ok(val.clone().into_owned()), // TODO return &Record ?
+            Value::Record {
+                val,
+                internal_span: _,
+            } => Ok(val.clone().into_owned()), // TODO return &Record ?
             _ => Err(LabeledError::new("Not a table")),
         })
         .collect::<Result<Vec<_>, LabeledError>>()?;
@@ -414,7 +420,7 @@ fn write_records_to_parquet(
                 let values = column_data
                     .map(|v| {
                         v.as_int()
-                        .or_else(|_| v.as_filesize())  // TODO : we loose the info that it was a file size
+                            .or_else(|_| v.as_filesize()) // TODO : we loose the info that it was a file size
                             .map_err(|_| LabeledError::new("Cannot convert to int"))
                     })
                     .collect::<Result<Vec<_>, _>>()?;
