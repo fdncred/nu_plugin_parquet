@@ -19,18 +19,22 @@ To [add the plugin] permanently, just install it and call `plugin add` on it:
 
 ## Using Cargo
 
-```bash
+```nushell
 cargo install --path .
 plugin add ~/.cargo/bin/nu_plugin_parquet
 plugin use ~/.cargo/bin/nu_plugin_parquet # required if you don't want to quit out and restart nushell
 ```
 
 ## Usage
-```bash
+```nushell
 open -r sample.parquet | from parquet | first 10
 ```
+or
+```nushell
+open sample.parquet | first 10
+```
 
-```bash
+```nushell
 ╭───┬───────────────┬────┬────────────┬───────────┬──────────────┬────────┬──────────────┬──────────────┬──────────────┬────────────┬───────────┬──────────────┬──────────╮
 │ # │ registration… │ id │ first_name │ last_name │    email     │ gender │  ip_address  │      cc      │   country    │ birthdate  │  salary   │    title     │ comments │
 ├───┼───────────────┼────┼────────────┼───────────┼──────────────┼────────┼──────────────┼──────────────┼──────────────┼────────────┼───────────┼──────────────┼──────────┤
@@ -53,11 +57,11 @@ open -r sample.parquet | from parquet | first 10
 
 Display metadata, instead of data, from the parquet file by passing the `--metadata, -m` flag to `from parquet`:
 
-```bash
+```nushell
 open -r sample.parquet | from parquet --metadata  | table -e
 ```
 
-```bash
+```nushell
 ╭────────────┬─────────────────────────────────────────────────────────────────────────────────────────────────────╮
 │ version    │ 1                                                                                                   │
 │ creator    │ parquet-mr version 1.8.1 (build 4aba4dae7bb0d4edbcf7923ae1339f28fd3f7fcf)                           │
