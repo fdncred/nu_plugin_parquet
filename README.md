@@ -100,11 +100,11 @@ open -r sample.parquet | from parquet --metadata  | table -e
 
 ### Writing
 
-```bash
+```nushell
 [{a:1, b:3}, {a: 2, b:4}] | save example.parquet
 ```
 
 Or, to save all running processes: 
-```bash
+```nushell
 ps | save example.parquet
 ```
