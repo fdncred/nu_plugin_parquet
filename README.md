@@ -8,7 +8,7 @@ This repo is a copy from jakeswenson's repo and updated to support nushell v0.60
 [plugin]: https://www.nushell.sh/book/plugins.html#adding-a-plugin
 [structured types]: https://www.nushell.sh/book/types_of_data.html
 
-This is a [nushell] [plugin] to parse parquet data files into `nu` structured types.
+This is a [nushell] [plugin] to add parquet compatibility with `nu` structured types. It can read parquet files to `nu` tables, or write tables to parquet files.
 
 
 # Installing
@@ -26,6 +26,8 @@ plugin use ~/.cargo/bin/nu_plugin_parquet # required if you don't want to quit o
 ```
 
 ## Usage
+### Reading
+
 ```nushell
 open -r sample.parquet | from parquet | first 10
 ```
@@ -94,4 +96,15 @@ open -r sample.parquet | from parquet --metadata  | table -e
 │            │ │ 0 │     1000 │          112492 │                                                                  │
 │            │ ╰───┴──────────┴─────────────────╯                                                                  │
 ╰────────────┴─────────────────────────────────────────────────────────────────────────────────────────────────────╯
+```
+
+### Writing
+
+```nushell
+[{a:1, b:3}, {a: 2, b:4}] | save example.parquet
+```
+
+Or, to save all running processes: 
+```nushell
+ps | save example.parquet
 ```
