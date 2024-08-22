@@ -368,9 +368,9 @@ checksum = "1fd0f2584146f6f2ef48085050886acf353beff7305ebd1ae69500e27c67f64b"
 
 [[package]]
 name = "bytes"
-version = "1.6.1"
+version = "1.7.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a12916984aab3fa6e39d655a33e09c0071eb36d6ab3aea5c2d78551f1df6d952"
+checksum = "8318a53db07bb3f8dca91a600466bdb3f2eaadeedfdbcf02e1accbad9271ba50"
 
 [[package]]
 name = "cc"
@@ -703,9 +703,9 @@ dependencies = [
 
 [[package]]
 name = "indexmap"
-version = "2.2.6"
+version = "2.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "168fb715dda47215e360912c096649d23d58bf392ac62f73919e831745e40f26"
+checksum = "93ead53efc7ea8ed3cfb0c79fc8023fbb782a5432b52830b6518941cebe6505c"
 dependencies = [
  "equivalent",
  "hashbrown 0.14.5",
@@ -1034,7 +1034,7 @@ dependencies = [
 
 [[package]]
 name = "nu-derive-value"
-version = "0.95.1"
+version = "0.97.2"
 dependencies = [
  "convert_case",
  "proc-macro-error",
@@ -1045,22 +1045,23 @@ dependencies = [
 
 [[package]]
 name = "nu-engine"
-version = "0.95.1"
+version = "0.97.2"
 dependencies = [
  "log",
  "nu-glob",
  "nu-path",
  "nu-protocol",
  "nu-utils",
+ "terminal_size",
 ]
 
 [[package]]
 name = "nu-glob"
-version = "0.95.1"
+version = "0.97.2"
 
 [[package]]
 name = "nu-path"
-version = "0.95.1"
+version = "0.97.2"
 dependencies = [
  "dirs",
  "omnipath",
@@ -1069,7 +1070,7 @@ dependencies = [
 
 [[package]]
 name = "nu-plugin"
-version = "0.95.1"
+version = "0.97.2"
 dependencies = [
  "log",
  "nix",
@@ -1083,7 +1084,7 @@ dependencies = [
 
 [[package]]
 name = "nu-plugin-core"
-version = "0.95.1"
+version = "0.97.2"
 dependencies = [
  "interprocess",
  "log",
@@ -1097,7 +1098,7 @@ dependencies = [
 
 [[package]]
 name = "nu-plugin-protocol"
-version = "0.95.1"
+version = "0.97.2"
 dependencies = [
  "bincode",
  "nu-protocol",
@@ -1109,13 +1110,15 @@ dependencies = [
 
 [[package]]
 name = "nu-protocol"
-version = "0.95.1"
+version = "0.97.2"
 dependencies = [
  "brotli 5.0.0",
  "byte-unit",
  "chrono",
  "chrono-humanize",
  "convert_case",
+ "dirs",
+ "dirs-sys",
  "fancy-regex",
  "indexmap",
  "log",
@@ -1132,11 +1135,12 @@ dependencies = [
  "serde",
  "thiserror",
  "typetag",
+ "windows-sys 0.48.0",
 ]
 
 [[package]]
 name = "nu-system"
-version = "0.95.1"
+version = "0.97.2"
 dependencies = [
  "chrono",
  "itertools",
@@ -1154,7 +1158,7 @@ dependencies = [
 
 [[package]]
 name = "nu-utils"
-version = "0.95.1"
+version = "0.97.2"
 dependencies = [
  "crossterm_winapi",
  "log",
