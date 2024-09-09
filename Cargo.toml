@@ -5,15 +5,33 @@ edition = "2021"
 license = "MIT"
 name = "nu_plugin_parquet"
 repository = "https://github.com/fdncred/nu_plugin_parquet"
-version = "0.6.0"
+version = "0.7.0"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-# nu-plugin = "0.74.0"
-# nu-protocol = "0.74.0"
+# nushell dependencies
+nu-plugin = "0.97.1"
+nu-protocol = "0.97.1"
+nu-path = "0.97.1"
+
+# for local development, you can use a path dependency
+# nu-plugin = { path = "../nushell/crates/nu-plugin", version = "0.97.2" }
+# nu-protocol = { path = "../nushell/crates/nu-protocol", version = "0.97.2" }
+# nu-path = { path = "../nushell/crates/nu-path", version = "0.97.2" }
+
 bytes = "1.7.1"
 chrono = { version = "0.4.31", features = ["serde"] }
-nu-plugin = { path = "../nushell/crates/nu-plugin", version = "0.97.2" }
-nu-protocol = { path = "../nushell/crates/nu-protocol", version = "0.97.2" }
 parquet = "49.0.0"
+
+[dev-dependencies]
+nu-plugin-test-support = "0.97.1"
+# nu-plugin-test-support = { path = "../nushell/crates/nu-plugin-test-support" }
+
+[profile.release]
+opt-level = "s"     # Optimize for size
+strip = "debuginfo"
+lto = "thin"
+
+[profile.dev]
+opt-level = 0
