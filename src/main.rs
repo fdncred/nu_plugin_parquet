@@ -27,7 +27,7 @@ impl SimplePluginCommand for FromParquet {
         "from parquet"
     }
 
-    fn description(&self) -> &str {
+    fn usage(&self) -> &str {
         "Convert from .parquet binary into table"
     }
     fn signature(&self) -> Signature {
@@ -96,7 +96,7 @@ impl SimplePluginCommand for ToParquet {
         "to parquet".into()
     }
 
-    fn description(&self) -> &str {
+    fn usage(&self) -> &str {
         "Convert from table to .parquet binary"
     }
 
