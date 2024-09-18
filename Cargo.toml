@@ -1,6 +1,6 @@
 [package]
 name = "nu_plugin_parquet"
-version = "0.7.0"
+version = "0.8.0"
 authors = ["Darren Schroeder", "Jake Swenson <jake@jakeswenson.com>"]
 edition = "2021"
 repository = "https://github.com/fdncred/nu_plugin_parquet"
