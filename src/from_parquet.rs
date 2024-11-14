@@ -51,6 +51,7 @@ fn convert_to_nu(field: &Field, span: Span) -> Value {
                     span,
                 )
             }),
+        Field::Float16(f16) => Value::float((*f16).into(), span),
         Field::Float(f) => Value::float((*f).into(), span),
         Field::Double(f) => Value::float(*f, span),
         Field::Str(s) => Value::string(s, span),
@@ -293,6 +294,7 @@ fn logical_or_converted_type_to_string(
             }
             LogicalType::Uuid => "UUID".to_string(),
             LogicalType::Unknown => "UNKNOWN".to_string(),
+            LogicalType::Float16 => "FLOAT_16".to_string(),
         },
         None => match converted_type {
             ConvertedType::BSON => "BSON".to_string(),
@@ -430,7 +432,7 @@ fn write_records_to_parquet(
             ColumnWriter::DoubleColumnWriter(ref mut w) => {
                 let values = column_data
                     .map(|v| {
-                        v.as_f64()
+                        v.as_float()
                             .map_err(|_| LabeledError::new("Cannot convert to float"))
                     })
                     .collect::<Result<Vec<_>, _>>()?;
