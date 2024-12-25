@@ -1,6 +1,6 @@
 [package]
 name = "nu_plugin_parquet"
-version = "0.10.0"
+version = "0.11.0"
 authors = ["Darren Schroeder", "Jake Swenson <jake@jakeswenson.com>"]
 edition = "2021"
 repository = "https://github.com/fdncred/nu_plugin_parquet"
@@ -11,21 +11,21 @@ license = "MIT"
 
 [dependencies]
 # nushell dependencies
-nu-plugin = "0.100.0"
-nu-protocol = "0.100.0"
-nu-path = "0.100.0"
+nu-plugin = "0.101.0"
+nu-protocol = "0.101.0"
+nu-path = "0.101.0"
 
 # for local development, you can use a path dependency
 # nu-plugin = { path = "../nushell/crates/nu-plugin", version = "0.98.0" }
 # nu-protocol = { path = "../nushell/crates/nu-protocol", version = "0.98.0" }
 # nu-path = { path = "../nushell/crates/nu-path", version = "0.98.0" }
 
-bytes = "1.8.0"
-chrono = { version = "0.4.38", features = ["serde"] }
-parquet = "53.2.0"
+bytes = "1.9.0"
+chrono = { version = "0.4.39", features = ["serde"] }
+parquet = "54.0.0"
 
 [dev-dependencies]
-nu-plugin-test-support = "0.100.0"
+nu-plugin-test-support = "0.101.0"
 # nu-plugin-test-support = { path = "../nushell/crates/nu-plugin-test-support" }
 
 [profile.release]

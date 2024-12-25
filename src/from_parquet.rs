@@ -422,7 +422,7 @@ fn write_records_to_parquet(
                 let values = column_data
                     .map(|v| {
                         v.as_int()
-                            .or_else(|_| v.as_filesize()) // TODO : we loose the info that it was a file size
+                            .or_else(|_| v.as_filesize().map(|fs| fs.into())) // TODO : we loose the info that it was a file size
                             .map_err(|_| LabeledError::new("Cannot convert to int"))
                     })
                     .collect::<Result<Vec<_>, _>>()?;
