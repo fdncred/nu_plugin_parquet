@@ -1,8 +1,8 @@
 use bytes::Bytes;
 use chrono::{DateTime, Duration, FixedOffset, TimeZone};
-use nu_protocol::record::Columns;
 use nu_protocol::Type as NuType;
-use nu_protocol::{record, LabeledError, Record, ShellError, Span, Value};
+use nu_protocol::record::Columns;
+use nu_protocol::{LabeledError, Record, ShellError, Span, Value, record};
 use parquet::basic::Repetition;
 use parquet::basic::{ConvertedType, LogicalType, TimeUnit, Type as PhysicalType};
 use parquet::column::writer::ColumnWriter;
@@ -408,7 +408,7 @@ fn write_records_to_parquet(
 
         // Get the correct writer for each type
         match col_writer.untyped() {
-            ColumnWriter::BoolColumnWriter(ref mut w) => {
+            ColumnWriter::BoolColumnWriter(w) => {
                 let values = column_data
                     .map(|v| {
                         v.as_bool()
@@ -418,7 +418,7 @@ fn write_records_to_parquet(
                 w.write_batch(&values, None, None)
                     .map_err(|e| LabeledError::new(e.to_string()))?;
             }
-            ColumnWriter::Int64ColumnWriter(ref mut w) => {
+            ColumnWriter::Int64ColumnWriter(w) => {
                 let values = column_data
                     .map(|v| {
                         v.as_int()
@@ -429,7 +429,7 @@ fn write_records_to_parquet(
                 w.write_batch(&values, None, None)
                     .map_err(|e| LabeledError::new(e.to_string()))?;
             }
-            ColumnWriter::DoubleColumnWriter(ref mut w) => {
+            ColumnWriter::DoubleColumnWriter(w) => {
                 let values = column_data
                     .map(|v| {
                         v.as_float()
@@ -439,7 +439,7 @@ fn write_records_to_parquet(
                 w.write_batch(&values, None, None)
                     .map_err(|e| LabeledError::new(e.to_string()))?;
             }
-            ColumnWriter::ByteArrayColumnWriter(ref mut w) => {
+            ColumnWriter::ByteArrayColumnWriter(w) => {
                 let values = column_data
                     .map(|v| {
                         v.as_str()
@@ -501,7 +501,7 @@ fn value_to_type(column_name: &str, value: &Value) -> Result<Type, LabeledError>
             return Err(LabeledError::new(format!(
                 "Cannot store {} type (not supported)",
                 value.get_type()
-            )))
+            )));
         }
     };
     Ok(t.with_repetition(Repetition::REQUIRED).build().unwrap())
