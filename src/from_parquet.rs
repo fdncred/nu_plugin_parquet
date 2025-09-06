@@ -78,6 +78,8 @@ fn convert_to_nu(field: &Field, span: Span) -> Value {
         Field::MapInternal(_map) => {
             unimplemented!("Maps not supported yet")
         }
+        Field::TimeMillis(millis) => Value::duration((*millis * 1_000_000) as i64, span),
+        Field::TimeMicros(micros) => Value::duration((*micros * 1000) as i64, span),
     }
 }
 
@@ -295,6 +297,9 @@ fn logical_or_converted_type_to_string(
             LogicalType::Uuid => "UUID".to_string(),
             LogicalType::Unknown => "UNKNOWN".to_string(),
             LogicalType::Float16 => "FLOAT_16".to_string(),
+            LogicalType::Variant => "Variant".to_string(),
+            LogicalType::Geometry => "Geometry".to_string(),
+            LogicalType::Geography => "Geography".to_string(),
         },
         None => match converted_type {
             ConvertedType::BSON => "BSON".to_string(),
