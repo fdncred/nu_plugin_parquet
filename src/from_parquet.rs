@@ -269,6 +269,7 @@ fn logical_or_converted_type_to_string(
 ) -> String {
     match logical_type {
         Some(logical_type) => match logical_type {
+            LogicalType::File => "FILE".to_string(),
             LogicalType::Bson => "BSON".to_string(),
             LogicalType::Date => "DATE".to_string(),
             LogicalType::Decimal(decimal) => {
